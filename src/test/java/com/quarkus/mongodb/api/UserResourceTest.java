@@ -17,7 +17,6 @@ import javax.ws.rs.core.MediaType;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 
 @QuarkusTest
 @QuarkusTestResource(EmbeddedMongoConfiguration.class)
@@ -112,19 +111,9 @@ class UserResourceTest {
         assertThat(fetchedUser.getId(), is(notNullValue()));
     }
 
-    @Test
-    public void health() {
-        RestAssured.when().get("/health/ready").then()
-                .body("status", is("UP"),
-                        "checks.data", containsInAnyOrder(hasKey("default")),
-                        "checks.status", containsInAnyOrder("UP"),
-                        "checks.name", containsInAnyOrder("MongoDB connection health check"));
-    }
-
     private void createResources() throws JsonProcessingException {
 
-        Address userAddress1 = new Address("St.", "Street, 1", "City", "State", "12345");
-        User user1 = new User("Name1", "Surname1", "01/01/1970", userAddress1);
+        User user1 = buildUser(1);
 
         Response responsePost = RestAssured
                 .given()
@@ -135,8 +124,7 @@ class UserResourceTest {
         assertThat(responsePost, is(notNullValue()));
         assertThat(responsePost.statusCode(), is(202));
 
-        Address userAddress2 = new Address("St.", "Street, 2", "City", "State", "12345");
-        User user2 = new User("Name2", "Surname2", "02/02/1970", userAddress2);
+        User user2 = buildUser(2);
         responsePost = RestAssured
                 .given()
                 .header("Content-Type", MediaType.APPLICATION_JSON)
@@ -149,8 +137,7 @@ class UserResourceTest {
     }
 
     private String getStoredUserId() throws JsonProcessingException {
-        Address userAddress = new Address("St.", "Street, 1", "City", "State", "12345");
-        User user = new User("Name", "Surname", "01/01/1970", userAddress);
+        User user = buildUser(1);
 
         Response responsePost = RestAssured
                 .given()
@@ -168,6 +155,11 @@ class UserResourceTest {
         assertThat(userId, is(notNullValue()));
 
         return userId;
+    }
+
+    private User buildUser(Integer userCount) {
+        Address userAddress = new Address("St.", "Street, " + userCount, "City", "State", "12345");
+        return new User("Name" + userCount, "Surname" + userCount, "0" + userCount + "/0" + userCount + "/1970", userAddress);
     }
 
 }
