@@ -9,6 +9,7 @@ import com.mongodb.client.result.InsertOneResult;
 import com.quarkus.mongodb.model.User;
 import org.bson.BsonObjectId;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -42,6 +43,37 @@ public class UserRepository {
     }
 
     public void add(User user) {
+
+        InsertOneResult insertOneResult = getCollection().insertOne(asDocument(user));
+        BsonObjectId objectId = insertOneResult.getInsertedId().asObjectId();
+        user.setId(objectId.getValue().toHexString());
+    }
+
+    public User findById(String userId) {
+        FindIterable<Document> userFindIterable = getCollection().find(eq("_id", new ObjectId(userId)));
+
+        Document userDocument = userFindIterable.first();
+
+        return User.of(userDocument);
+    }
+
+    public long delete(String userId) {
+        DeleteResult result = getCollection().deleteOne(eq("_id", new ObjectId(userId)));
+
+        return result.getDeletedCount();
+    }
+
+    public User update(String userId, User user) {
+
+        Document userDocument = asDocument(user);
+
+        Bson filter = eq("_id", new ObjectId(userId));
+        getCollection().findOneAndReplace(filter, userDocument);
+
+        return findById(userId);
+    }
+
+    private Document asDocument(User user) {
         Document userDocument = new Document()
                 .append("name", user.getName())
                 .append("surname", user.getSurname())
@@ -53,29 +85,11 @@ public class UserRepository {
                         .append("state", user.getAddress().getState())
                         .append("zipCode", user.getAddress().getZipCode()));
 
-        InsertOneResult insertOneResult = getCollection().insertOne(userDocument);
-        BsonObjectId objectId = insertOneResult.getInsertedId().asObjectId();
-        user.setId(objectId.getValue().toHexString());
-    }
-
-    public User findById(String userId) {
-        FindIterable<Document> userFindIterable = getCollection().find(eq("_id", new ObjectId(userId)));
-
-        Document userDocument = userFindIterable.first();
-
-        User user = User.of(userDocument);
-
-        return user;
+        return userDocument;
     }
 
 
     private MongoCollection getCollection() {
         return mongoClient.getDatabase("users").getCollection("users");
-    }
-
-    public long delete(String userId) {
-        DeleteResult result = getCollection().deleteOne(eq("_id", new ObjectId(userId)));
-
-        return result.getDeletedCount();
     }
 }

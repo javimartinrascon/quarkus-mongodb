@@ -29,7 +29,7 @@ class UserResourceTest {
 
     @AfterEach
     void tearDown() {
-        cleanResources();
+        cleanDB();
     }
 
     @Test
@@ -124,6 +124,39 @@ class UserResourceTest {
         deleteResource(user.getId());
     }
 
+    @Test
+    void update() throws Exception {
+
+        User user = createResource(1);
+
+        assertThat(user.getName(), is("Name1"));
+
+        User userToUpdate = buildUser(3);
+
+        Response response = RestAssured
+                .given()
+                .header("Content-Type", MediaType.APPLICATION_JSON)
+                .body(mapper.writeValueAsString(userToUpdate))
+                .when()
+                .put("/users/" + user.getId())
+                .andReturn();
+
+        assertThat(response, is(notNullValue()));
+        assertThat(response.statusCode(), is(200));
+        User savedUser = mapper.readValue(response.getBody().print(), User.class);
+        assertThat(savedUser.getId(), is(notNullValue()));
+        assertThat(savedUser.getName(), is("Name3"));
+        assertThat(savedUser.getSurname(), is("Surname3"));
+        assertThat(savedUser.getBirthDate(), is("03/03/1970"));
+        assertThat(savedUser.getAddress().getType(), is("St."));
+        assertThat(savedUser.getAddress().getStreetAddress(), is("Street, 3"));
+        assertThat(savedUser.getAddress().getCity(), is("City"));
+        assertThat(savedUser.getAddress().getState(), is("State"));
+        assertThat(savedUser.getAddress().getZipCode(), is("12345"));
+
+        createdUserIds.add(savedUser.getId());
+    }
+
     private void deleteResource(String userId) {
         RestAssured
                 .given()
@@ -168,7 +201,7 @@ class UserResourceTest {
         return new User("Name" + userCount, "Surname" + userCount, "0" + userCount + "/0" + userCount + "/1970", userAddress);
     }
 
-    private void cleanResources() {
+    private void cleanDB() {
         createdUserIds.forEach(this::deleteResource);
         createdUserIds.clear();
     }

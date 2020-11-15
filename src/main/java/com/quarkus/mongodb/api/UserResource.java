@@ -18,10 +18,10 @@ public class UserResource {
     UserRepository userRepository;
 
     @POST
-    public Response add(User user) {
-        userRepository.add(user);
+    public Response add(User userRequest) {
+        userRepository.add(userRequest);
 
-        return Response.accepted(user).build();
+        return Response.accepted(userRequest).build();
     }
 
     @GET
@@ -46,5 +46,15 @@ public class UserResource {
             return Response.ok().build();
         }
         return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    @PUT
+    @Path("/{userId}")
+    public Response update(@PathParam("userId") String userId, User userRequest) {
+        User user = userRepository.update(userId, userRequest);
+        if (Objects.isNull(user)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(user).build();
     }
 }
