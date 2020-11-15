@@ -38,4 +38,13 @@ public class UserResource {
         }
         return Response.ok(user).build();
     }
+
+    @DELETE
+    @Path("/{userId}")
+    public Response delete(@PathParam("userId") String userId) {
+        if (userRepository.delete(userId) > 0) {
+            return Response.ok().build();
+        }
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
 }

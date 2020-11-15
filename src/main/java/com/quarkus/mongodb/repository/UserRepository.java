@@ -1,12 +1,12 @@
 package com.quarkus.mongodb.repository;
 
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.result.InsertOneResult;
-import com.quarkus.mongodb.model.Address;
-import com.quarkus.mongodb.model.User;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.InsertOneResult;
+import com.quarkus.mongodb.model.User;
 import org.bson.BsonObjectId;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -71,5 +71,11 @@ public class UserRepository {
 
     private MongoCollection getCollection() {
         return mongoClient.getDatabase("users").getCollection("users");
+    }
+
+    public long delete(String userId) {
+        DeleteResult result = getCollection().deleteOne(eq("_id", new ObjectId(userId)));
+
+        return result.getDeletedCount();
     }
 }

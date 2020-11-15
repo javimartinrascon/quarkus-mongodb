@@ -10,10 +10,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -24,18 +25,17 @@ class UserResourceTest {
 
     ObjectMapper mapper = new ObjectMapper();
 
-    @BeforeEach
-    void setUp() {
-    }
+    private List<String> createdUserIds = new ArrayList<>();
 
     @AfterEach
     void tearDown() {
+        cleanResources();
     }
 
     @Test
     void list() throws Exception {
 
-        createResources();
+        createResources(2);
 
         RestAssured
                 .given()
@@ -77,6 +77,7 @@ class UserResourceTest {
                 .given()
                 .header("Content-Type", MediaType.APPLICATION_JSON)
                 .body(mapper.writeValueAsString(user))
+                .when()
                 .post("/users")
                 .andReturn();
 
@@ -92,52 +93,56 @@ class UserResourceTest {
         assertThat(savedUser.getAddress().getCity(), is("City"));
         assertThat(savedUser.getAddress().getState(), is("State"));
         assertThat(savedUser.getAddress().getZipCode(), is("12345"));
+
+        createdUserIds.add(savedUser.getId());
     }
 
     @Test
     void findById() throws Exception {
 
-        String userId = getStoredUserId();
+        User userId = createResource(1);
 
         Response response = RestAssured
                 .given()
                 .header("Content-Type", MediaType.APPLICATION_JSON)
-                .get("/users/" + userId)
+                .when()
+                .get("/users/" + userId.getId())
                 .andReturn();
 
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatusCode(), is(200));
         User fetchedUser = mapper.readValue(response.getBody().print(), User.class);
         assertThat(fetchedUser.getId(), is(notNullValue()));
+
+        createdUserIds.add(fetchedUser.getId());
     }
 
-    private void createResources() throws JsonProcessingException {
+    @Test
+    void delete() throws Exception {
+        User user = createResource(1);
 
-        User user1 = buildUser(1);
-
-        Response responsePost = RestAssured
-                .given()
-                .header("Content-Type", MediaType.APPLICATION_JSON)
-                .body(mapper.writeValueAsString(user1))
-                .post("/users")
-                .andReturn();
-        assertThat(responsePost, is(notNullValue()));
-        assertThat(responsePost.statusCode(), is(202));
-
-        User user2 = buildUser(2);
-        responsePost = RestAssured
-                .given()
-                .header("Content-Type", MediaType.APPLICATION_JSON)
-                .body(mapper.writeValueAsString(user2))
-                .post("/users")
-                .andReturn();
-
-        assertThat(responsePost, is(notNullValue()));
-        assertThat(responsePost.statusCode(), is(202));
+        deleteResource(user.getId());
     }
 
-    private String getStoredUserId() throws JsonProcessingException {
-        User user = buildUser(1);
+    private void deleteResource(String userId) {
+        RestAssured
+                .given()
+                .header("Content-Type", MediaType.APPLICATION_JSON)
+                .when()
+                .delete("/users/" + userId)
+                .then()
+                .statusCode(200);
+    }
+
+    private void createResources(Integer users) throws JsonProcessingException {
+        for (int i = 1; i <= users; i++) {
+            User user = createResource(i);
+            createdUserIds.add(user.getId());
+        }
+    }
+
+    private User createResource(Integer userCount) throws JsonProcessingException {
+        User user = buildUser(userCount);
 
         Response responsePost = RestAssured
                 .given()
@@ -146,6 +151,7 @@ class UserResourceTest {
                 .post("/users")
                 .andReturn();
 
+        assertThat(responsePost, is(notNullValue()));
         assertThat(responsePost.statusCode(), is(202));
 
         User savedUser = mapper.readValue(responsePost.getBody().print(), User.class);
@@ -154,7 +160,7 @@ class UserResourceTest {
         String userId = savedUser.getId();
         assertThat(userId, is(notNullValue()));
 
-        return userId;
+        return savedUser;
     }
 
     private User buildUser(Integer userCount) {
@@ -162,4 +168,8 @@ class UserResourceTest {
         return new User("Name" + userCount, "Surname" + userCount, "0" + userCount + "/0" + userCount + "/1970", userAddress);
     }
 
+    private void cleanResources() {
+        createdUserIds.forEach(this::deleteResource);
+        createdUserIds.clear();
+    }
 }
