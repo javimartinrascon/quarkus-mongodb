@@ -14,12 +14,13 @@ dependencies {
     implementation 'io.quarkus:quarkus-resteasy-jackson'
     implementation 'io.quarkus:quarkus-arc'
     implementation 'io.quarkus:quarkus-smallrye-health'
+    implementation 'io.quarkus:quarkus-smallrye-metrics'
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo'
     testImplementation 'io.rest-assured:rest-assured'
 }
 
-group 'com.jmr.quarkus'
+group 'com.quarkus'
 version '1.0.0-SNAPSHOT'
 
 java {

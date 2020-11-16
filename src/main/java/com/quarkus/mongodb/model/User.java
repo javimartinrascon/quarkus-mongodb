@@ -1,16 +1,9 @@
 package com.quarkus.mongodb.model;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.bson.Document;
-import org.bson.codecs.pojo.annotations.BsonId;
-import org.bson.types.ObjectId;
 
 public class User {
 
-//    @JsonIgnore
-//    @BsonId
-//    private String _id;
     private String id;
     private String name;
     private String surname;
@@ -26,14 +19,6 @@ public class User {
         this.birthDate = birthDate;
         this.address = address;
     }
-
-   /* public String get_id() {
-        return _id;
-    }
-
-    public void set_id(String _id) {
-        this._id = _id;
-    }*/
 
     public String getId() {
         return id;
